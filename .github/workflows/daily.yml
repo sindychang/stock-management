@@ -1,0 +1,37 @@
+name: 每日盤後抓台股資料
+
+on:
+  schedule:
+    - cron: "40 6 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-fetch
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python scripts/fetch_twse.py
+      - name: 有變動才 commit
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --staged --quiet; then
+            echo "資料沒有變動，不 commit"
+          else
+            DATE=$(python -c "import json;print(json.load(open('data/meta.json'))['tradeDate'])")
+            git commit -m "資料更新：$DATE"
+            git push
+          fi
