@@ -1,0 +1,10 @@
+# 金鑰！絕對不要上傳
+.env
+
+# 程式產生的檔案
+latest_quotes.json
+__pycache__/
+*.pyc
+
+# Shioaji 憑證
+*.pfx
