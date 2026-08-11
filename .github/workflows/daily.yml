@@ -2,6 +2,7 @@ name: 每日盤後抓台股資料
 
 on:
   schedule:
+    # UTC 06:40 = 台灣 14:40（收盤後 1 小時，證交所資料已更新）
     - cron: "40 6 * * 1-5"
   workflow_dispatch:
 
@@ -15,21 +16,53 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 40
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: 取出程式碼
+        uses: actions/checkout@v5
+
+      - name: 安裝 Python
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: pip install requests
-      - run: python scripts/fetch_twse.py
+
+      - name: 安裝套件
+        run: pip install requests
+
+      # 行情滾動倉庫刻意不進 git（會讓 repo 膨脹），改放這裡的 cache。
+      # key 每次都不同 → 每次都會存一份新的；restore-keys 讓它撈回上一次的。
+      - name: 取回行情倉庫 cache
+        uses: actions/cache@v4
+        with:
+          path: px-cache
+          key: px-cache-${{ github.run_id }}
+          restore-keys: |
+            px-cache-
+
+      - name: cache 沒撈到就自動回補歷史
+        run: |
+          if [ ! -f px-cache/px.json.gz ]; then
+            echo "沒有行情倉庫，開始回補（一天一個請求，約 5 分鐘）"
+            python scripts/backfill_px.py --days 220
+          else
+            echo "行情倉庫已存在，跳過回補"
+          fi
+
+      - name: 抓基本面（財報、月營收、股利、產業別）
+        run: python scripts/fetch_fundamentals.py
+        continue-on-error: true
+
+      - name: 抓當日行情並計算所有指標
+        run: python scripts/fetch_daily.py
+
       - name: 有變動才 commit
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data
           if git diff --staged --quiet; then
-            echo "資料沒有變動，不 commit"
+            echo "資料沒有變動（今天可能沒開盤），不 commit"
           else
             DATE=$(python -c "import json;print(json.load(open('data/meta.json'))['tradeDate'])")
             git commit -m "資料更新：$DATE"
