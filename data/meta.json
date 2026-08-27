@@ -1,1 +1,1 @@
-{"tradeDate":"2026-08-25","updatedAt":"2026-08-26T15:30:42+08:00","sources":{"上市收盤":"成功 1378 檔","上櫃收盤":"失敗：ChunkedEncodingError: Response ended prematurely","估值":"成功 1082 檔","三大法人":"成功 1335 檔","基本面":"1426 檔"},"counts":{"market":1362,"industry":34,"watch":7,"detail":12,"pxDays":150,"fundamentals":1426}}
+{"tradeDate":"2026-08-26","updatedAt":"2026-08-28T01:53:05+08:00","sources":{"上市收盤":"成功 1378 檔","上櫃收盤":"成功 10629 檔","估值":"成功 1082 檔","三大法人":"成功 1338 檔","基本面":"1426 檔"},"counts":{"market":7488,"industry":34,"watch":7,"detail":12,"pxDays":150,"fundamentals":1426}}
